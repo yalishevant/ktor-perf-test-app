@@ -1,0 +1,50 @@
+<configuration>
+    <appender name="STDOUT" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Configure file appender for production use -->
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/ktor-performance-app.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/ktor-performance-app.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>30</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Configure access log for HTTP requests -->
+    <appender name="ACCESS_LOG" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>logs/access.log</file>
+        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+            <fileNamePattern>logs/access.%d{yyyy-MM-dd}.log</fileNamePattern>
+            <maxHistory>10</maxHistory>
+            <totalSizeCap>500MB</totalSizeCap>
+        </rollingPolicy>
+        <encoder>
+            <pattern>%d{YYYY-MM-dd HH:mm:ss.SSS} %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <!-- Configure logger for Ktor -->
+    <logger name="io.ktor" level="INFO"/>
+    
+    <!-- Configure logger for application code -->
+    <logger name="com.performance" level="INFO"/>
+    
+    <!-- Configure access logger -->
+    <logger name="io.ktor.server.plugins.callloging" level="INFO" additivity="false">
+        <appender-ref ref="ACCESS_LOG"/>
+    </logger>
+
+    <!-- Root logger configuration -->
+    <root level="INFO">
+        <appender-ref ref="STDOUT"/>
+        <appender-ref ref="FILE"/>
+    </root>
+</configuration>
