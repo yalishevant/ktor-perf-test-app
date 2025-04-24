@@ -6,6 +6,7 @@ import io.ktor.server.routing.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.random.Random
+import kotlinx.serialization.Serializable
 
 /**
  * Extension function to register memory-intensive routes.
@@ -21,23 +22,23 @@ fun Routing.memoryIntensiveRoutes() {
          */
         get("/allocate") {
             val count = call.parameters["count"]?.toIntOrNull()?.coerceAtMost(10000000) ?: 1000000
-            
+
             // Use Dispatchers.Default for memory-intensive operations
             val result = withContext(Dispatchers.Default) {
                 val startTime = System.nanoTime()
                 val objects = allocateObjects(count)
                 val endTime = System.nanoTime()
-                
-                mapOf(
-                    "count" to count,
-                    "allocationTimeNs" to (endTime - startTime),
-                    "objectSize" to objects.first().estimatedSize()
+
+                AllocateResponse(
+                    count = count,
+                    allocationTimeNs = (endTime - startTime),
+                    objectSize = objects.first().estimatedSize()
                 )
             }
-            
+
             call.respond(result)
         }
-        
+
         /**
          * Collection manipulation endpoint.
          * Creates and manipulates large collections to test memory performance.
@@ -46,33 +47,33 @@ fun Routing.memoryIntensiveRoutes() {
          */
         get("/collections") {
             val size = call.parameters["size"]?.toIntOrNull()?.coerceAtMost(10000000) ?: 1000000
-            
+
             // Use Dispatchers.Default for memory-intensive operations
             val result = withContext(Dispatchers.Default) {
                 val startTime = System.nanoTime()
-                
+
                 // Create a large list
                 val list = List(size) { Random.nextInt(0, 1000000) }
-                
+
                 // Perform operations on the list
                 val sorted = list.sorted()
                 val filtered = list.filter { it % 2 == 0 }
                 val mapped = list.map { it * 2 }
-                
+
                 val endTime = System.nanoTime()
-                
-                mapOf(
-                    "size" to size,
-                    "processingTimeNs" to (endTime - startTime),
-                    "sortedSample" to sorted.take(5),
-                    "filteredCount" to filtered.size,
-                    "mappedSample" to mapped.take(5)
+
+                CollectionsResponse(
+                    size = size,
+                    processingTimeNs = (endTime - startTime),
+                    sortedSample = sorted.take(5),
+                    filteredCount = filtered.size,
+                    mappedSample = mapped.take(5)
                 )
             }
-            
+
             call.respond(result)
         }
-        
+
         /**
          * String manipulation endpoint.
          * Creates and manipulates large strings to test memory performance.
@@ -81,33 +82,33 @@ fun Routing.memoryIntensiveRoutes() {
          */
         get("/strings") {
             val size = call.parameters["size"]?.toIntOrNull()?.coerceAtMost(10000000) ?: 1000000
-            
+
             // Use Dispatchers.Default for memory-intensive operations
             val result = withContext(Dispatchers.Default) {
                 val startTime = System.nanoTime()
-                
+
                 // Create a large string
                 val sb = StringBuilder(size)
                 for (i in 0 until size) {
                     sb.append(('a' + i % 26).toChar())
                 }
                 val str = sb.toString()
-                
+
                 // Perform operations on the string
                 val reversed = str.reversed()
                 val substring = str.substring(0, minOf(100, str.length))
                 val replaced = str.replace('a', 'z')
-                
+
                 val endTime = System.nanoTime()
-                
-                mapOf(
-                    "size" to size,
-                    "processingTimeNs" to (endTime - startTime),
-                    "substringPreview" to substring,
-                    "reversedPreview" to reversed.take(100)
+
+                StringsResponse(
+                    size = size,
+                    processingTimeNs = (endTime - startTime),
+                    substringPreview = substring,
+                    reversedPreview = reversed.take(100)
                 )
             }
-            
+
             call.respond(result)
         }
     }
@@ -130,6 +131,39 @@ private data class TestObject(
         return 4 + (name.length * 2) + (values.size * 8)
     }
 }
+
+/**
+ * Serializable data class for the allocate endpoint response.
+ */
+@Serializable
+data class AllocateResponse(
+    val count: Int,
+    val allocationTimeNs: Long,
+    val objectSize: Int
+)
+
+/**
+ * Serializable data class for the collections endpoint response.
+ */
+@Serializable
+data class CollectionsResponse(
+    val size: Int,
+    val processingTimeNs: Long,
+    val sortedSample: List<Int>,
+    val filteredCount: Int,
+    val mappedSample: List<Int>
+)
+
+/**
+ * Serializable data class for the strings endpoint response.
+ */
+@Serializable
+data class StringsResponse(
+    val size: Int,
+    val processingTimeNs: Long,
+    val substringPreview: String,
+    val reversedPreview: String
+)
 
 /**
  * Allocates a specified number of test objects.

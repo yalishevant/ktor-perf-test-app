@@ -6,6 +6,7 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.coroutines.delay
 import kotlin.random.Random
+import kotlinx.serialization.Serializable
 
 /**
  * Extension function to register configurable routes.
@@ -72,11 +73,11 @@ fun Routing.configurableRoutes() {
             // Generate random data of the specified size
             val data = generateRandomData(size)
 
-            call.respond(mapOf(
-                "size" to size,
-                "delay" to delayMs,
-                "timestamp" to System.currentTimeMillis(),
-                "data" to data
+            call.respond(CombinedResponse(
+                size = size,
+                delay = delayMs,
+                timestamp = System.currentTimeMillis(),
+                data = data
             ))
         }
 
@@ -95,6 +96,17 @@ fun Routing.configurableRoutes() {
         }
     }
 }
+
+/**
+ * Serializable data class for the combined endpoint response.
+ */
+@Serializable
+data class CombinedResponse(
+    val size: Int,
+    val delay: Long,
+    val timestamp: Long,
+    val data: String
+)
 
 /**
  * Generates a random string of the specified size.

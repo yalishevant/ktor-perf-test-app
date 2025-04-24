@@ -10,6 +10,7 @@ import java.io.File
 import java.nio.file.Files
 import java.nio.file.StandardOpenOption
 import kotlin.random.Random
+import kotlinx.serialization.Serializable
 
 /**
  * Extension function to register I/O-intensive routes.
@@ -26,18 +27,18 @@ fun Routing.ioIntensiveRoutes() {
         get("/write") {
             val sizeKB = call.parameters["size"]?.toIntOrNull()?.coerceAtMost(10240) ?: 1024
             val sizeBytes = sizeKB * 1024
-            
+
             // Use Dispatchers.IO for I/O-bound operations
             val result = withContext(Dispatchers.IO) {
                 val tempFile = createTempFile("ktor-perf-test", ".tmp")
                 tempFile.deleteOnExit()
-                
+
                 val startTime = System.nanoTime()
                 writeRandomDataToFile(tempFile, sizeBytes)
                 val endTime = System.nanoTime()
-                
+
                 val fileSize = tempFile.length()
-                
+
                 mapOf(
                     "requestedSizeKB" to sizeKB,
                     "actualSizeBytes" to fileSize,
@@ -45,10 +46,10 @@ fun Routing.ioIntensiveRoutes() {
                     "filePath" to tempFile.absolutePath
                 )
             }
-            
+
             call.respond(result)
         }
-        
+
         /**
          * File read endpoint.
          * Reads a file of the specified size to test file I/O performance.
@@ -58,20 +59,20 @@ fun Routing.ioIntensiveRoutes() {
         get("/read") {
             val sizeKB = call.parameters["size"]?.toIntOrNull()?.coerceAtMost(10240) ?: 1024
             val sizeBytes = sizeKB * 1024
-            
+
             // Use Dispatchers.IO for I/O-bound operations
             val result = withContext(Dispatchers.IO) {
                 val tempFile = createTempFile("ktor-perf-test", ".tmp")
                 tempFile.deleteOnExit()
-                
+
                 // First write the file
                 writeRandomDataToFile(tempFile, sizeBytes)
-                
+
                 // Then read it
                 val startTime = System.nanoTime()
                 val content = tempFile.readBytes()
                 val endTime = System.nanoTime()
-                
+
                 mapOf(
                     "sizeKB" to sizeKB,
                     "bytesRead" to content.size,
@@ -79,10 +80,10 @@ fun Routing.ioIntensiveRoutes() {
                     "filePath" to tempFile.absolutePath
                 )
             }
-            
+
             call.respond(result)
         }
-        
+
         /**
          * Database simulation endpoint.
          * Simulates database operations to test I/O performance.
@@ -93,27 +94,34 @@ fun Routing.ioIntensiveRoutes() {
         get("/db") {
             val records = call.parameters["records"]?.toIntOrNull()?.coerceAtMost(10000) ?: 1000
             val dbLatencyMs = call.parameters["delay"]?.toLongOrNull()?.coerceAtMost(1000) ?: 10
-            
+
             // Use Dispatchers.IO for I/O-bound operations
             val result = withContext(Dispatchers.IO) {
                 val startTime = System.nanoTime()
-                
+
                 // Simulate database operations
                 val dbRecords = simulateDatabaseOperations(records, dbLatencyMs)
-                
+
                 val endTime = System.nanoTime()
-                
-                mapOf(
-                    "records" to records,
-                    "simulatedDbLatencyMs" to dbLatencyMs,
-                    "totalTimeNs" to (endTime - startTime),
-                    "sampleRecords" to dbRecords.take(5)
+
+                DbResponse(
+                    records = records,
+                    simulatedDbLatencyMs = dbLatencyMs,
+                    totalTimeNs = (endTime - startTime),
+                    sampleRecords = dbRecords.take(5).map { record ->
+                        DbRecordResponse(
+                            id = record.id,
+                            name = record.name,
+                            value = record.value,
+                            timestamp = record.timestamp
+                        )
+                    }
                 )
             }
-            
+
             call.respond(result)
         }
-        
+
         /**
          * Network simulation endpoint.
          * Simulates network operations to test I/O performance.
@@ -124,16 +132,16 @@ fun Routing.ioIntensiveRoutes() {
         get("/network") {
             val sizeKB = call.parameters["size"]?.toIntOrNull()?.coerceAtMost(10240) ?: 1024
             val networkLatencyMs = call.parameters["delay"]?.toLongOrNull()?.coerceAtMost(1000) ?: 50
-            
+
             // Use Dispatchers.IO for I/O-bound operations
             val result = withContext(Dispatchers.IO) {
                 val startTime = System.nanoTime()
-                
+
                 // Simulate network operations
                 val data = simulateNetworkOperations(sizeKB, networkLatencyMs)
-                
+
                 val endTime = System.nanoTime()
-                
+
                 mapOf(
                     "sizeKB" to sizeKB,
                     "simulatedNetworkLatencyMs" to networkLatencyMs,
@@ -141,7 +149,7 @@ fun Routing.ioIntensiveRoutes() {
                     "dataHashCode" to data.hashCode()
                 )
             }
-            
+
             call.respond(result)
         }
     }
@@ -153,7 +161,7 @@ fun Routing.ioIntensiveRoutes() {
 private fun writeRandomDataToFile(file: File, sizeBytes: Int) {
     val buffer = ByteArray(8192) // 8KB buffer
     val randomData = Random.nextBytes(buffer)
-    
+
     Files.newOutputStream(file.toPath(), StandardOpenOption.CREATE, StandardOpenOption.WRITE).use { outputStream ->
         var remaining = sizeBytes
         while (remaining > 0) {
@@ -176,15 +184,37 @@ private data class DbRecord(
 )
 
 /**
+ * Serializable data class for the database record in the response.
+ */
+@Serializable
+data class DbRecordResponse(
+    val id: Int,
+    val name: String,
+    val value: Double,
+    val timestamp: Long
+)
+
+/**
+ * Serializable data class for the database simulation endpoint response.
+ */
+@Serializable
+data class DbResponse(
+    val records: Int,
+    val simulatedDbLatencyMs: Long,
+    val totalTimeNs: Long,
+    val sampleRecords: List<DbRecordResponse>
+)
+
+/**
  * Simulates database operations.
  */
 private suspend fun simulateDatabaseOperations(count: Int, latencyMs: Long): List<DbRecord> {
     val records = mutableListOf<DbRecord>()
-    
+
     for (i in 0 until count) {
         // Simulate database latency
         delay(latencyMs)
-        
+
         // Create a record
         records.add(
             DbRecord(
@@ -195,7 +225,7 @@ private suspend fun simulateDatabaseOperations(count: Int, latencyMs: Long): Lis
             )
         )
     }
-    
+
     return records
 }
 
@@ -205,7 +235,7 @@ private suspend fun simulateDatabaseOperations(count: Int, latencyMs: Long): Lis
 private suspend fun simulateNetworkOperations(sizeKB: Int, latencyMs: Long): ByteArray {
     // Simulate network latency
     delay(latencyMs)
-    
+
     // Create random data
     val sizeBytes = sizeKB * 1024
     return Random.nextBytes(sizeBytes)

@@ -48,13 +48,12 @@ application {
 }
 
 // Configure the shadowJar task for creating a fat JAR
-tasks.withType<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar> {
+tasks.named<com.github.jengelman.gradle.plugins.shadow.tasks.ShadowJar>("shadowJar") {
     manifest {
         attributes(mapOf("Main-Class" to "com.performance.ApplicationKt"))
     }
-    archiveBaseName.set("ktor-performance-app")
-    archiveClassifier.set("")
-    archiveVersion.set("")
+    archiveFileName.set("ktor-performance-app.jar")
+    mergeServiceFiles()
 }
 
 tasks.test {
@@ -62,5 +61,17 @@ tasks.test {
 }
 
 kotlin {
-    jvmToolchain(17)
+    jvmToolchain(11)
+}
+
+// Set Java compatibility
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
+    kotlinOptions {
+        jvmTarget = "11"
+    }
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_11
+    targetCompatibility = JavaVersion.VERSION_11
 }

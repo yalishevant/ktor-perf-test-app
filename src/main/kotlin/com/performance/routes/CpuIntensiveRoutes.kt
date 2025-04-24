@@ -7,6 +7,38 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlin.math.sqrt
 import kotlin.random.Random
+import kotlinx.serialization.Serializable
+
+/**
+ * Data class representing the response from the primes endpoint.
+ */
+@Serializable
+data class PrimesResponse(
+    val count: Int,
+    val limit: Int,
+    val last10Primes: List<Int>
+)
+
+/**
+ * Data class representing the response from the sort endpoint.
+ */
+@Serializable
+data class SortResponse(
+    val size: Int,
+    val sortTimeNs: Long,
+    val first10Elements: List<Int>,
+    val last10Elements: List<Int>
+)
+
+/**
+ * Data class representing the response from the matrix endpoint.
+ */
+@Serializable
+data class MatrixResponse(
+    val size: Int,
+    val multiplicationTimeNs: Long,
+    val sampleValue: Int
+)
 
 /**
  * Extension function to register CPU-intensive routes.
@@ -22,19 +54,19 @@ fun Routing.cpuIntensiveRoutes() {
          */
         get("/primes") {
             val limit = call.parameters["limit"]?.toIntOrNull() ?: 100000
-            
+
             // Use Dispatchers.Default for CPU-bound operations
             val primes = withContext(Dispatchers.Default) {
                 calculatePrimes(limit)
             }
-            
-            call.respond(mapOf(
-                "count" to primes.size,
-                "limit" to limit,
-                "last10Primes" to primes.takeLast(10)
+
+            call.respond(PrimesResponse(
+                count = primes.size,
+                limit = limit,
+                last10Primes = primes.takeLast(10)
             ))
         }
-        
+
         /**
          * Sorting endpoint.
          * Generates and sorts a random array of integers.
@@ -43,25 +75,25 @@ fun Routing.cpuIntensiveRoutes() {
          */
         get("/sort") {
             val size = call.parameters["size"]?.toIntOrNull() ?: 100000
-            
+
             // Use Dispatchers.Default for CPU-bound operations
             val result = withContext(Dispatchers.Default) {
                 val array = generateRandomArray(size)
                 val startTime = System.nanoTime()
                 array.sort()
                 val endTime = System.nanoTime()
-                
-                mapOf(
-                    "size" to size,
-                    "sortTimeNs" to (endTime - startTime),
-                    "first10Elements" to array.take(10),
-                    "last10Elements" to array.takeLast(10)
+
+                SortResponse(
+                    size = size,
+                    sortTimeNs = (endTime - startTime),
+                    first10Elements = array.take(10),
+                    last10Elements = array.takeLast(10)
                 )
             }
-            
+
             call.respond(result)
         }
-        
+
         /**
          * Matrix multiplication endpoint.
          * Generates two random matrices and multiplies them.
@@ -70,23 +102,23 @@ fun Routing.cpuIntensiveRoutes() {
          */
         get("/matrix") {
             val size = call.parameters["size"]?.toIntOrNull()?.coerceAtMost(500) ?: 200
-            
+
             // Use Dispatchers.Default for CPU-bound operations
             val result = withContext(Dispatchers.Default) {
                 val matrixA = generateRandomMatrix(size)
                 val matrixB = generateRandomMatrix(size)
-                
+
                 val startTime = System.nanoTime()
                 val resultMatrix = multiplyMatrices(matrixA, matrixB)
                 val endTime = System.nanoTime()
-                
-                mapOf(
-                    "size" to size,
-                    "multiplicationTimeNs" to (endTime - startTime),
-                    "sampleValue" to resultMatrix[0][0]
+
+                MatrixResponse(
+                    size = size,
+                    multiplicationTimeNs = (endTime - startTime),
+                    sampleValue = resultMatrix[0][0]
                 )
             }
-            
+
             call.respond(result)
         }
     }
@@ -98,17 +130,17 @@ fun Routing.cpuIntensiveRoutes() {
  */
 private fun calculatePrimes(limit: Int): List<Int> {
     if (limit <= 1) return emptyList()
-    
+
     val isPrime = BooleanArray(limit + 1) { true }
     isPrime[0] = false
     isPrime[1] = false
-    
+
     val primes = mutableListOf<Int>()
-    
+
     for (i in 2..limit) {
         if (isPrime[i]) {
             primes.add(i)
-            
+
             // Mark multiples as non-prime
             var j = i * i
             while (j <= limit) {
@@ -117,7 +149,7 @@ private fun calculatePrimes(limit: Int): List<Int> {
             }
         }
     }
-    
+
     return primes
 }
 
@@ -141,7 +173,7 @@ private fun generateRandomMatrix(size: Int): Array<IntArray> {
 private fun multiplyMatrices(a: Array<IntArray>, b: Array<IntArray>): Array<IntArray> {
     val size = a.size
     val result = Array(size) { IntArray(size) }
-    
+
     for (i in 0 until size) {
         for (j in 0 until size) {
             var sum = 0
@@ -151,6 +183,6 @@ private fun multiplyMatrices(a: Array<IntArray>, b: Array<IntArray>): Array<IntA
             result[i][j] = sum
         }
     }
-    
+
     return result
 }
