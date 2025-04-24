@@ -110,19 +110,19 @@ You can use the [wrk](https://github.com/wg/wrk) tool to test the performance of
 
 ```bash
 # Test the health endpoint with 10 threads and 100 connections for 30 seconds
-wrk -t10 -c100 -d5s http://35.180.91.184:8080/health
+wrk -t10 -c100 -d60s http://35.180.91.184:8080/health
 
 # Test a CPU-intensive endpoint
-wrk -t10 -c100 -d30s 'http://35.180.91.184:8080/cpu/primes?limit=10000'
+wrk -t10 -c100 -d60s 'http://35.180.91.184:8080/cpu/primes?limit=10000'
 
 # Test a memory-intensive endpoint
-wrk -t10 -c100 -d30s 'http://35.180.91.184:8080/memory/allocate?count=10000'
+wrk -t10 -c100 -d60s 'http://35.180.91.184:8080/memory/allocate?count=10000'
 
 # Test an I/O-intensive endpoint
-wrk -t10 -c100 -d30s 'http://35.180.91.184:8080/io/db?records=100&delay=5'
+wrk -t10 -c100 -d60s 'http://35.180.91.184:8080/io/db?records=100&delay=5'
 
 # Test a configurable endpoint
-wrk -t10 -c100 -d30s 'http://35.180.91.184:8080/configurable/combined?size=1024&delay=10'
+wrk -t10 -c100 -d60s 'http://35.180.91.184:8080/configurable/combined?size=1024&delay=10'
 ```
 
 ## Deployment to AWS EC2
