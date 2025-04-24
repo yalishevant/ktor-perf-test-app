@@ -43,3 +43,12 @@ bin/
 
 ### Mac OS ###
 .DS_Store
+/.idea/
+
+### Logs ###
+logs/
+
+### Project specific ###
+.junie/
+plan-*.md
+tasks-*.md
