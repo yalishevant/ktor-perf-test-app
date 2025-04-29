@@ -113,34 +113,34 @@ You can use the [wrk](https://github.com/wg/wrk) tool to test the performance of
 
 ```bash
 # Test the health endpoint with 10 threads and 100 connections for 10 seconds
-wrk -t10 -c100 -d10s http://15.237.213.92:8080/health
+wrk -t10 -c100 -d10s http://localhost:8080/health
 
 # Test CPU-intensive endpoints
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/primes?limit=100000'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/sort?size=100000'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/matrix?size=200'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/recursive?depth=30'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/parallel?iterations=1000000&threads=4'
+wrk -t10 -c500 -d30s 'http://localhost:8080/cpu/primes?limit=100000'
+wrk -t10 -c500 -d30s 'http://localhost:8080/cpu/sort?size=1000'
+wrk -t10 -c500 -d30s 'http://localhost:8080/cpu/matrix?size=200'
+wrk -t10 -c500 -d30s 'http://localhost:8080/cpu/recursive?depth=25'
+wrk -t10 -c500 -d30s 'http://localhost:8080/cpu/parallel?iterations=1000000&threads=4'
 
 # Test memory-intensive endpoints
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/memory/allocate?count=1000000'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/memory/collections?size=1000000'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/memory/strings?size=1000000'
+wrk -t10 -c100 -d30s --latency 'http://localhost:8080/memory/allocate?count=100000'
+wrk -t10 -c200 -d5m --latency 'http://localhost:8080/memory/collections?size=10000'
+wrk -t10 -c100 -d30s 'http://localhost:8080/memory/strings?size=1000000'
 
 # Test I/O-intensive endpoints
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/write?size=1024&method=0'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/read?size=1024&method=0'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/db?records=1000&delay=10&complexity=3'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/network?size=1024&delay=50&requests=5&complexity=3&errorRate=10'
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/combined?size=1024&delay=20&parallel=true'
+wrk -t10 -c100 -d30s 'http://localhost:8080/io/write?size=1024&method=0'
+wrk -t10 -c100 -d30s 'http://localhost:8080/io/read?size=1024&method=0'
+wrk -t10 -c100 -d30s 'http://localhost:8080/io/db?records=1000&delay=10&complexity=3'
+wrk -t10 -c100 -d30s 'http://localhost:8080/io/network?size=1024&delay=50&requests=5&complexity=3&errorRate=10'
+wrk -t10 -c100 -d30s 'http://localhost:8080/io/combined?size=1024&delay=20&parallel=true'
 
 # Test configurable endpoints
-wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/configurable/combined?size=1024&delay=10'
+wrk -t10 -c100 -d30s 'http://localhost:8080/configurable/combined?size=1024&delay=10'
 ```
 
 ### Comparing JDK Performance
 
-To compare the performance between Azul Zulu and Zing JDKs:
+To compare the performance between JDKs:
 
 1. Run the same test with both JDKs
 2. Focus on CPU-intensive and I/O-intensive endpoints, as they show the most significant differences
@@ -150,13 +150,13 @@ To compare the performance between Azul Zulu and Zing JDKs:
 Example comparison workflow:
 
 ```bash
-# Run with Azul Zulu JDK
+# Run at machine with JDK-1
 java -jar build/libs/ktor-performance-app.jar
 # In another terminal
 wrk -t10 -c100 -d30s 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
 
-# Then run with Azul Zing JDK
-/path/to/zing/bin/java -jar build/libs/ktor-performance-app.jar
+# Run at machine with JDK-2
+/path/to/JDK-2/bin/java -jar build/libs/ktor-performance-app.jar
 # In another terminal
 wrk -t10 -c100 -d30s 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
 
