@@ -76,6 +76,8 @@ Returns Prometheus metrics for monitoring application performance.
 GET /cpu/primes?limit=100000
 GET /cpu/sort?size=100000
 GET /cpu/matrix?size=200
+GET /cpu/recursive?depth=30
+GET /cpu/parallel?iterations=1000000&threads=4
 ```
 
 #### Memory-Intensive Endpoints
@@ -89,10 +91,11 @@ GET /memory/strings?size=1000000
 #### I/O-Intensive Endpoints
 
 ```
-GET /io/write?size=1024
-GET /io/read?size=1024
-GET /io/db?records=1000&delay=10
-GET /io/network?size=1024&delay=50
+GET /io/write?size=1024&method=0
+GET /io/read?size=1024&method=0
+GET /io/db?records=1000&delay=10&complexity=3
+GET /io/network?size=1024&delay=50&requests=5&complexity=3&errorRate=10
+GET /io/combined?size=1024&delay=20&parallel=true
 ```
 
 #### Configurable Endpoints
@@ -109,20 +112,55 @@ GET /configurable/echo?param1=value1&param2=value2
 You can use the [wrk](https://github.com/wg/wrk) tool to test the performance of the application:
 
 ```bash
-# Test the health endpoint with 10 threads and 100 connections for 30 seconds
-wrk -t10 -c100 -d60s http://localhost:8080/health
+# Test the health endpoint with 10 threads and 100 connections for 10 seconds
+wrk -t10 -c100 -d10s http://15.237.213.92:8080/health
 
-# Test a CPU-intensive endpoint
-wrk -t10 -c100 -d60s 'http://localhost:8080/cpu/primes?limit=10000'
+# Test CPU-intensive endpoints
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/primes?limit=100000'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/sort?size=100000'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/matrix?size=200'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/recursive?depth=30'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/cpu/parallel?iterations=1000000&threads=4'
 
-# Test a memory-intensive endpoint
-wrk -t10 -c100 -d60s 'http://localhost:8080/memory/allocate?count=10000'
+# Test memory-intensive endpoints
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/memory/allocate?count=1000000'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/memory/collections?size=1000000'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/memory/strings?size=1000000'
 
-# Test an I/O-intensive endpoint
-wrk -t10 -c100 -d60s 'http://localhost:8080/io/db?records=100&delay=5'
+# Test I/O-intensive endpoints
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/write?size=1024&method=0'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/read?size=1024&method=0'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/db?records=1000&delay=10&complexity=3'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/network?size=1024&delay=50&requests=5&complexity=3&errorRate=10'
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/io/combined?size=1024&delay=20&parallel=true'
 
-# Test a configurable endpoint
-wrk -t10 -c100 -d60s 'http://localhost:8080/configurable/combined?size=1024&delay=10'
+# Test configurable endpoints
+wrk -t10 -c100 -d30s 'http://15.237.213.92:8080/configurable/combined?size=1024&delay=10'
+```
+
+### Comparing JDK Performance
+
+To compare the performance between Azul Zulu and Zing JDKs:
+
+1. Run the same test with both JDKs
+2. Focus on CPU-intensive and I/O-intensive endpoints, as they show the most significant differences
+3. Compare throughput (requests/second) and latency (response time)
+4. The enhanced complexity of these endpoints will better highlight the performance differences between JDKs
+
+Example comparison workflow:
+
+```bash
+# Run with Azul Zulu JDK
+java -jar build/libs/ktor-performance-app.jar
+# In another terminal
+wrk -t10 -c100 -d30s 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
+
+# Then run with Azul Zing JDK
+/path/to/zing/bin/java -jar build/libs/ktor-performance-app.jar
+# In another terminal
+wrk -t10 -c100 -d30s 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
+
+# Compare the results
 ```
 
 ## Deployment to AWS EC2
