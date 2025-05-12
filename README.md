@@ -151,14 +151,14 @@ Example comparison workflow:
 
 ```bash
 # Run at machine with JDK-1
-java -jar build/libs/ktor-performance-app.jar
+/path/to/JDK-1/bin/java -jar build/libs/ktor-performance-app.jar
 # In another terminal
-wrk -t10 -c100 -d30s 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
+wrk -t10 -c100 -d30s --latency 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
 
 # Run at machine with JDK-2
 /path/to/JDK-2/bin/java -jar build/libs/ktor-performance-app.jar
 # In another terminal
-wrk -t10 -c100 -d30s 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
+wrk -t10 -c100 -d30s --latency 'http://localhost:8080/cpu/parallel?iterations=5000000&threads=8'
 
 # Compare the results
 ```
